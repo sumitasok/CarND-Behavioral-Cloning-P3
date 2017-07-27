@@ -38,13 +38,16 @@ from keras.models import Sequential
 from keras.layers import Flatten, Dense, Lambda, Dropout
 from keras.layers.convolutional import Convolution2D
 from keras.layers.pooling import MaxPooling2D
+import keras.regularizers as regularizers
 
 model = Sequential()
-# normaliastion of training data.
+# normalisation of training data.
 model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
 model.add(Convolution2D(6,5,5, activation="relu"))
 model.add(MaxPooling2D())
 model.add(Convolution2D(6,5,5, activation="relu"))
+model.add(MaxPooling2D())
+model.add(Convolution2D(3,3,5, activation="relu"))
 model.add(MaxPooling2D())
 model.add(Flatten())
 model.add(Dense(127))
