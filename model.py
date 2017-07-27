@@ -1,11 +1,20 @@
+import argparse
 import numpy as np
 import csv
 import cv2
 
 base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
 
+parser = argparse.ArgumentParser(description='Remote Driving')
+parser.add_argument(
+    'training_data_base_path',
+    type=str,
+    help='Path to training data, this dir should have /IMG and driving_log.csv'
+)
+
 lines = []
-with open(base_path + 'driving_log.csv') as csvfile:
+training_data_base_path = base_path
+with open(training_data_base_path + 'driving_log.csv') as csvfile:
     reader = csv.reader(csvfile)
     for line in reader:
         lines.append(line)
@@ -26,11 +35,12 @@ X_train = np.array(images)
 y_train = np.array(measurements)
 
 from keras.models import Sequential
-from keras.layers import Flatten, Dense, Lambda
+from keras.layers import Flatten, Dense, Lambda, Dropout
 from keras.layers.convolutional import Convolution2D
 from keras.layers.pooling import MaxPooling2D
 
 model = Sequential()
+# normaliastion of training data.
 model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
 model.add(Convolution2D(6,5,5, activation="relu"))
 model.add(MaxPooling2D())
@@ -38,7 +48,9 @@ model.add(Convolution2D(6,5,5, activation="relu"))
 model.add(MaxPooling2D())
 model.add(Flatten())
 model.add(Dense(127))
+model.add(Dropout(0.5))
 model.add(Dense(84))
+model.add(Dropout(0.5))
 model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
