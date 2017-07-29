@@ -27,7 +27,8 @@ for line in lines:
     filename = source_path.split('/')[-1]
     current_path = base_path + '/IMG/' + filename
     image = cv2.imread(current_path)
-    images.append(image)
+    image_resized = cv2.resize(image[60:140,:], (64,64))
+    images.append(image_resized)
     measurement = float(line[3])
     measurements.append(measurement)
 
@@ -42,10 +43,10 @@ import keras.regularizers as regularizers
 
 model = Sequential()
 # normalisation of training data.
-model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
-model.add(Convolution2D(6,5,5, activation="relu"))
+model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(64, 64, 3)))
+model.add(Convolution2D(3,3,3, activation="relu"))
 model.add(MaxPooling2D())
-model.add(Convolution2D(6,5,5, activation="relu"))
+model.add(Convolution2D(3,3,3, activation="relu"))
 model.add(MaxPooling2D())
 model.add(Convolution2D(3,3,3, activation="relu"))
 model.add(MaxPooling2D())
