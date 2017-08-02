@@ -3,6 +3,7 @@ import numpy as np
 import csv
 import cv2
 import time
+import augmentation
 
 
 # base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
@@ -30,14 +31,25 @@ for line in lines:
     filename = source_path.split('/')[-1]
     current_path = base_path + 'IMG/' + filename
     # current_path = base_path + filename
-    print(current_path)
     image = cv2.imread(current_path)
     images.append(image)
     measurement = float(line[3])
     measurements.append(measurement)
 
-X_train = np.array(images)
-y_train = np.array(measurements)
+# Data Augmentation
+str_imgs, str_msr, agl_imgs, agl_msr = augmentation.split_straight_angle(images, measurements)
+str_images, str_measurements = augmentation.remove_excess_straigth_drive(str_imgs, str_msr, len(agl_imgs)/len(str_imgs))
+agl_images, agl_measurements = augmentation.invert_images_and_measurements(agl_imgs, agl_msr)
+
+# X_train = np.array(images)
+# y_train = np.array(measurements)
+X_train = np.array(str_images + agl_images)
+y_train = np.array(str_measurements + agl_measurements)
+
+print("images count")
+print(len(str_images), len(str_measurements), len(X_train))
+print("measurements count")
+print(len(agl_images), len(agl_measurements), len(y_train))
 
 from keras.models import Sequential
 from keras.layers import Flatten, Dense, Lambda, Dropout
