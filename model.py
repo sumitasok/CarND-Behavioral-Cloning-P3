@@ -2,6 +2,8 @@ import argparse
 import numpy as np
 import csv
 import cv2
+import time
+
 
 base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
 
@@ -36,12 +38,14 @@ y_train = np.array(measurements)
 
 from keras.models import Sequential
 from keras.layers import Flatten, Dense, Lambda, Dropout
-from keras.layers.convolutional import Convolution2D
+from keras.layers.convolutional import Convolution2D, Cropping2D
 from keras.layers.pooling import MaxPooling2D
 
 model = Sequential()
 # normaliastion of training data.
-model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
+model.add(Cropping2D(cropping=((40,20),(70,70)), input_shape=(160, 320, 3)))
+# model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
+model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(100, 180, 3)))
 model.add(Convolution2D(6,5,5, activation="relu"))
 model.add(MaxPooling2D())
 model.add(Convolution2D(6,5,5, activation="relu"))
@@ -56,4 +60,4 @@ model.add(Dense(1))
 model.compile(loss='mse', optimizer='adam')
 model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=7)
 
-model.save('model.h5')
+model.save('model-h5/model-'+str(time.time()*1000000)+'.h5')
