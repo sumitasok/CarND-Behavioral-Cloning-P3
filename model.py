@@ -43,7 +43,8 @@ from keras.layers.pooling import MaxPooling2D
 
 model = Sequential()
 # normaliastion of training data.
-model.add(Cropping2D(cropping=((40,20),(70,70)), input_shape=(160, 320, 3)))
+# https://keras.io/layers/convolutional/#cropping2d
+model.add(Cropping2D(cropping=((64, 23),(0, 0)), input_shape=(160, 320, 3)))
 # model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
 model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(100, 180, 3)))
 model.add(Convolution2D(6,5,5, activation="relu"))
@@ -60,4 +61,9 @@ model.add(Dense(1))
 model.compile(loss='mse', optimizer='adam')
 model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=7)
 
-model.save('model-h5/model-'+str(time.time()*1000000)+'.h5')
+timestamp = str(time.time()*1000000)
+# https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model
+model_json = model.to_json()
+with open("model-h5/model-"+ timestamp +".json", "w") as json_file:
+  json_file.write(model_json)
+model.save('model-h5/model-'+ timestamp +'.h5')
