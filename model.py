@@ -5,7 +5,8 @@ import cv2
 import time
 
 
-base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
+# base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
+base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/data/'
 
 parser = argparse.ArgumentParser(description='Remote Driving')
 parser.add_argument(
@@ -27,7 +28,9 @@ measurements = []
 for line in lines:
     source_path = line[0]
     filename = source_path.split('/')[-1]
-    current_path = base_path + '/IMG/' + filename
+    current_path = base_path + 'IMG/' + filename
+    # current_path = base_path + filename
+    print(current_path)
     image = cv2.imread(current_path)
     images.append(image)
     measurement = float(line[3])
