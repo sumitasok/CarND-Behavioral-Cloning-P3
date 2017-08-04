@@ -77,6 +77,7 @@ model.compile(loss='mse', optimizer='adam')
 model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=7)
 
 timestamp = str(time.time()*1000000)
+print("file identifier: ", timestamp)
 # https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model
 model_json = model.to_json()
 with open("model-h5/model-"+ timestamp +".json", "w") as json_file:
