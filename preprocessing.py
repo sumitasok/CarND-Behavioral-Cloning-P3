@@ -1,4 +1,6 @@
 from PIL import Image
+# from cv2 import getPerspectiveTransform, warpPerspective
+import cv2
 
 def hello():
 	print('hello')
@@ -14,3 +16,28 @@ def crop_like_keras_crop2D(input_filename, output_filename, top_crop, bottom_cro
 	cropped_image.save(output_filename)
 	img.close()
 	return output_filename
+
+#   src = np.float32([
+#        [850, 320],
+#        [865, 450],
+#        [533, 350],
+#        [535, 210]
+#    ])
+#   src = np.float32([
+#        [870, 240],
+#        [870, 370],
+#        [520, 370],
+#        [520, 240]
+#    ])
+def warp(img, src_points, dst_points, img_size=None):
+
+    if img_size == None:
+        img_size = (img.shape[1], img.shape[0])
+
+    M = cv2.getPerspectiveTransform(src_points, dst_points)
+
+    Minv = cv2.getPerspectiveTransform(dst_points, src_points)
+
+    warped = cv2.warpPerspective(img, M, img_size, flags=cv2.INTER_LINEAR)
+
+    return warped

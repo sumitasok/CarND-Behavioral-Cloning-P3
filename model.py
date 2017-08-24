@@ -38,7 +38,7 @@ for line in lines:
 
 # Data Augmentation
 str_imgs, str_msr, agl_imgs, agl_msr = augmentation.split_straight_angle(images, measurements)
-str_images, str_measurements = augmentation.remove_excess_straigth_drive(str_imgs, str_msr, len(agl_imgs)/len(str_imgs))
+str_images, str_measurements = str_imgs, str_msr # augmentation.remove_excess_straigth_drive(str_imgs, str_msr, len(agl_imgs)/len(str_imgs))
 agl_images, agl_measurements = augmentation.invert_images_and_measurements(agl_imgs, agl_msr)
 
 # X_train = np.array(images)
@@ -46,15 +46,14 @@ agl_images, agl_measurements = augmentation.invert_images_and_measurements(agl_i
 X_train = np.array(str_images + agl_images)
 y_train = np.array(str_measurements + agl_measurements)
 
-print("images count")
-print(len(str_images), len(str_measurements), len(X_train))
-print("measurements count")
-print(len(agl_images), len(agl_measurements), len(y_train))
+print("straight images count: ", len(str_images), "measurements count: ", len(str_measurements), len(X_train))
+print("angle images count: ", len(agl_images), "measurements count: ", len(agl_measurements), len(y_train))
 
 from keras.models import Sequential
 from keras.layers import Flatten, Dense, Lambda, Dropout
-from keras.layers.convolutional import Convolution2D, Cropping2D
+from keras.layers.convolutional import Conv2D, Cropping2D
 from keras.layers.pooling import MaxPooling2D
+# from keras.layers.advanced_activations import ELU
 
 model = Sequential()
 # normaliastion of training data.
@@ -62,15 +61,20 @@ model = Sequential()
 model.add(Cropping2D(cropping=((64, 23),(0, 0)), input_shape=(160, 320, 3)))
 # model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
 model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(100, 180, 3)))
-model.add(Convolution2D(6,5,5, activation="relu"))
+model.add(Conv2D(6,5,5, activation="relu"))
 model.add(MaxPooling2D())
-model.add(Convolution2D(6,5,5, activation="relu"))
+model.add(Conv2D(6,5,5, activation="relu"))
+model.add(MaxPooling2D())
+model.add(Conv2D(4,3,3, activation="relu"))
 model.add(MaxPooling2D())
 model.add(Flatten())
 model.add(Dense(127))
-model.add(Dropout(0.5))
+# model.add(Dropout(0.5))
 model.add(Dense(84))
-model.add(Dropout(0.5))
+# model.add(ELU)
+model.add(Dense(24))
+# model.add(ELU)
+# model.add(Dropout(0.5))
 model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
@@ -80,6 +84,9 @@ timestamp = str(time.time()*1000000)
 print("file identifier: ", timestamp)
 # https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model
 model_json = model.to_json()
-with open("model-h5/model-"+ timestamp +".json", "w") as json_file:
+with open("results/model-"+ timestamp +".json", "w") as json_file:
   json_file.write(model_json)
-model.save('model-h5/model-'+ timestamp +'.h5')
+model.save('results/model-'+ timestamp +'.h5')
+model.summary()
+from keras.utils import plot_model
+plot_model(model, to_file='results/model-'+timestamp+'.png')
