@@ -33,6 +33,12 @@ def generator(samples, batch_size=32):
 
 # base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/data/'
 base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training data/'
+import time
+import augmentation
+
+
+# base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
+base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/data/'
 
 parser = argparse.ArgumentParser(description='Remote Driving')
 parser.add_argument(
@@ -70,8 +76,18 @@ for line in train_samples:
     measurement = float(line[3])
     measurements.append(measurement)
 
-X_train = np.array(images)
-y_train = np.array(measurements)
+# Data Augmentation
+str_imgs, str_msr, agl_imgs, agl_msr = augmentation.split_straight_angle(images, measurements)
+str_images, str_measurements = str_imgs, str_msr # augmentation.remove_excess_straigth_drive(str_imgs, str_msr, len(agl_imgs)/len(str_imgs))
+agl_images, agl_measurements = augmentation.invert_images_and_measurements(agl_imgs, agl_msr)
+
+# X_train = np.array(images)
+# y_train = np.array(measurements)
+X_train = np.array(str_images + agl_images)
+y_train = np.array(str_measurements + agl_measurements)
+
+print("straight images count: ", len(str_images), "measurements count: ", len(str_measurements), len(X_train))
+print("angle images count: ", len(agl_images), "measurements count: ", len(agl_measurements), len(y_train))
 
 images = []
 measurements = []
@@ -89,31 +105,31 @@ X_val = np.array(images)
 y_val = np.array(measurements)
 
 from keras.models import Sequential
-from keras.layers import Flatten, Dense, Lambda, Dropout, Cropping2D
-from keras.layers.convolutional import Convolution2D
+from keras.layers import Flatten, Dense, Lambda, Dropout
+from keras.layers.convolutional import Conv2D, Cropping2D
 from keras.layers.pooling import MaxPooling2D
-import keras.regularizers as regularizers
-
-# train_generator = generator(train_samples, 32)
-data_generator = generator(train_samples, 32)
-# validation_generator = generator(validation_samples, 32)
-valid_generator = generator(validation_samples, 32)
+# from keras.layers.advanced_activations import ELU
 
 model = Sequential()
-# normalisation of training data.
-# model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(160,320,3)))
-model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3), output_shape=(160, 320, 3)))
-model.add(Convolution2D(3,3,3, activation="relu"))
+# normaliastion of training data.
+# https://keras.io/layers/convolutional/#cropping2d
+model.add(Cropping2D(cropping=((64, 23),(0, 0)), input_shape=(160, 320, 3)))
+# model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
+model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(100, 180, 3)))
+model.add(Conv2D(6,5,5, activation="relu"))
 model.add(MaxPooling2D())
-model.add(Convolution2D(3,3,3, activation="relu"))
+model.add(Conv2D(6,5,5, activation="relu"))
 model.add(MaxPooling2D())
-model.add(Convolution2D(3,3,3, activation="relu"))
+model.add(Conv2D(4,3,3, activation="relu"))
 model.add(MaxPooling2D())
 model.add(Flatten())
 model.add(Dense(127))
-model.add(Dropout(0.5))
+# model.add(Dropout(0.5))
 model.add(Dense(84))
-model.add(Dropout(0.5))
+# model.add(ELU)
+model.add(Dense(24))
+# model.add(ELU)
+# model.add(Dropout(0.5))
 model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
@@ -122,8 +138,13 @@ model.compile(loss='mse', optimizer='adam')
 # model.fit_generator(train_generator, samples_per_epoch= len(train_samples), validation_data=validation_generator, nb_val_samples=len(validation_samples), nb_epoch=1)
 model.fit_generator(data_generator, samples_per_epoch = math.ceil(len(X_train)), nb_epoch=1, validation_data = valid_generator, nb_val_samples = len(X_val))
 
-# model_json = model.to_json()
-# with open("model.json", "w") as json_file:
-#     json_file.write(model_json)
-model.save("model.h5")
-gc.collect()
+timestamp = str(time.time()*1000000)
+print("file identifier: ", timestamp)
+# https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model
+model_json = model.to_json()
+with open("results/model-"+ timestamp +".json", "w") as json_file:
+  json_file.write(model_json)
+model.save('results/model-'+ timestamp +'.h5')
+model.summary()
+from keras.utils import plot_model
+plot_model(model, to_file='results/model-'+timestamp+'.png')

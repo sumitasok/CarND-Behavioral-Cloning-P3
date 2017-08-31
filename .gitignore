@@ -1,2 +1,6 @@
 *.h5
 model.json
+model-h5/
+__pycache__/
+run/
+results/
