@@ -4,3 +4,4 @@ model-h5/
 __pycache__/
 run/
 results/
+.ipynb_checkpoints/
