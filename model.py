@@ -36,11 +36,8 @@ base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Tr
 import time
 import augmentation
 
-
-# base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
-base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/data/'
-
 base_path = '/data/'
+base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data/'
 
 parser = argparse.ArgumentParser(description='Remote Driving')
 parser.add_argument(
