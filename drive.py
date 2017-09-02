@@ -16,6 +16,9 @@ from keras.models import load_model
 import h5py
 from keras import __version__ as keras_version
 
+import matplotlib.pyplot as plt
+from preprocessing import image_process
+
 sio = socketio.Server()
 app = Flask(__name__)
 model = None
@@ -47,10 +50,13 @@ controller = SimplePIController(0.1, 0.002)
 set_speed = 9
 controller.set_desired(set_speed)
 
-from preprocessing import image_process
+
+counter = 0
 
 @sio.on('telemetry')
 def telemetry(sid, data):
+    global counter
+
     if data:
         # The current steering angle of the car
         steering_angle = data["steering_angle"]
@@ -62,6 +68,10 @@ def telemetry(sid, data):
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image = image_process(image)
+        print("image", str(image.shape))
+        plt.imshow(image)
+        plt.savefig('results/videos/' + str(counter) + '.png')
+        counter += 1
         image_array = np.asarray(image)
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
 

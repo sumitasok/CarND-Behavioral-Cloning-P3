@@ -4,6 +4,9 @@ import csv
 import cv2
 import time
 import augmentation
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+import gc; gc.collect()
 
 
 # base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
@@ -17,7 +20,24 @@ parser.add_argument(
     help='Path to training data, this dir should have /IMG and driving_log.csv'
 )
 
+EPOCHS = 1
+
 import augmentation
+
+def image_process(current_path):
+    image = mpimg.imread(current_path)
+
+    cropped = cv2.resize(image[60:140,:], (320, 80))
+    
+    R = cropped[:,:,0]
+    G = cropped[:,:,1]
+    B = cropped[:,:,2]
+    thresh = (200, 255)
+    rbinary = np.zeros_like(R)
+    gbinary = np.zeros_like(G)
+    rbinary[(R > thresh[0]) & (R <= thresh[1])] = 1
+    
+    return np.dstack((rbinary, gbinary, gbinary))
 
 def generator(samples, batch_size=32):
     num_samples = len(samples)
@@ -52,6 +72,8 @@ with open(training_data_base_path + 'driving_log.csv') as csvfile:
     for line in reader:
         lines.append(line)
 
+counter = 0
+
 images = []
 measurements = []
 
@@ -61,6 +83,11 @@ for line in lines:
     current_path = base_path + 'IMG/' + filename
     # current_path = base_path + filename
     image = cv2.imread(current_path)
+    image = image_process(current_path)
+
+
+    plt.imshow(image)
+    plt.savefig('results/videos/' + filename + '.png')
     images.append(image)
     measurement = float(line[3])
     measurements.append(measurement)
@@ -90,6 +117,7 @@ model = Sequential()
 model.add(Cropping2D(cropping=((64, 23),(0, 0)), input_shape=(160, 320, 3)))
 # model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
 model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(100, 180, 3)))
+# model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(80, 320, 3)))
 model.add(Conv2D(6,5,5, activation="relu"))
 model.add(MaxPooling2D())
 model.add(Conv2D(6,5,5, activation="relu"))
@@ -107,7 +135,7 @@ model.add(Dense(24))
 model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
-model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=7)
+model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=EPOCHS)
 
 timestamp = str(time.time()*1000000)
 print("file identifier: ", timestamp)
