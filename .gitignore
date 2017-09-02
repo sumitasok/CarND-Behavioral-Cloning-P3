@@ -4,3 +4,4 @@ __pycache__/
 run/
 results/
 .ipynb_checkpoints/
+.DS_Store
