@@ -8,6 +8,7 @@ import augmentation
 
 # base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
 base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/data/'
+base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data/'
 
 parser = argparse.ArgumentParser(description='Remote Driving')
 parser.add_argument(
@@ -78,7 +79,7 @@ model.add(Dense(24))
 model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
-model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=7)
+model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=7)
 
 timestamp = str(time.time()*1000000)
 print("file identifier: ", timestamp)
@@ -88,5 +89,5 @@ with open("results/model-"+ timestamp +".json", "w") as json_file:
   json_file.write(model_json)
 model.save('results/model-'+ timestamp +'.h5')
 model.summary()
-from keras.utils import plot_model
-plot_model(model, to_file='results/model-'+timestamp+'.png')
+# from keras.utils import plot_model
+# plot_model(model, to_file='results/model-'+timestamp+'.png')
