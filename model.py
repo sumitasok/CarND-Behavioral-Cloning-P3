@@ -17,6 +17,34 @@ parser.add_argument(
     help='Path to training data, this dir should have /IMG and driving_log.csv'
 )
 
+import augmentation
+
+def generator(samples, batch_size=32):
+    num_samples = len(samples)
+    while 1: # Loop forever so the generator never terminates
+        shuffle(samples)
+        for offset in range(0, num_samples, batch_size):
+            batch_samples = samples[offset:offset+batch_size]
+
+            images = []
+            angles = []
+            for batch_sample in batch_samples:
+                name = base_path+ 'IMG/'+batch_sample[0].split('/')[-1]
+                center_angle = float(batch_sample[3])
+                images.append(image_process(name))
+                angles.append(center_angle)
+                
+            # Data Augmentation
+            str_imgs, str_msr, agl_imgs, agl_msr = augmentation.split_straight_angle(images, angles)
+            str_images, str_measurements = str_imgs, str_msr # augmentation.remove_excess_straigth_drive(str_imgs, str_msr, len(agl_imgs)/len(str_imgs))
+            agl_images, agl_measurements = augmentation.invert_images_and_measurements(agl_imgs, agl_msr)
+
+            X_train = np.array(str_imgs + agl_images)
+            y_train = np.array(str_msr + agl_measurements)
+            for i in range(0, len(X_train)):
+                yield (X_train[i], y_train[i])
+
+
 lines = []
 training_data_base_path = base_path
 with open(training_data_base_path + 'driving_log.csv') as csvfile:
