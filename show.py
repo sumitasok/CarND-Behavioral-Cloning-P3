@@ -8,6 +8,24 @@ import math
 
 base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data/'
 
+subject_images = [
+    'center_2016_12_01_13_30_48_287.jpg',
+    'center_2016_12_01_13_31_12_937.jpg',
+    'center_2016_12_01_13_32_35_588.jpg',
+    'center_2016_12_01_13_32_46_689.jpg', # approaching the bridge
+    'center_2016_12_01_13_32_55_684.jpg', # a normal road turning right at the end / scratching tarred road
+    'center_2016_12_01_13_33_04_080.jpg', # tarred road, nearing right turn
+    'center_2016_12_01_13_33_06_005.jpg', # tarred road, with read and white striped borders
+    'center_2016_12_01_13_33_10_377.jpg', # red-white border, changing to concrete border.
+    'center_2016_12_01_13_33_37_309.jpg', # no border on left; right turn
+    'center_2016_12_01_13_33_40_049.jpg', # concrete block on left side, while exiting no border.
+    'center_2016_12_01_13_33_40_861.jpg', # right side white border
+    'center_2016_12_01_13_33_53_864.jpg', # red-white stripe left turn
+    'center_2016_12_01_13_33_57_413.jpg', # red-white border changing to concrete border
+    'center_2016_12_01_13_34_06_043.jpg', # left no border, concrete block, red-white border on right, turning right
+    'center_2016_12_01_13_34_18_784.jpg', # kacha bridge road exiting to normal road.
+]
+
 lines = []
 with open(base_path + 'driving_log.csv') as csvfile:
     reader = csv.reader(csvfile)
@@ -197,6 +215,8 @@ f, ax = plt.subplots(4, 2, figsize=(40, 20))
 for line in lines:
     source_path = line[0]
     filename = source_path.split('/')[-1]
+    if filename not in subject_images:
+        continue
     current_path = base_path + 'IMG/' + filename
 
     # image = cv2.imread(current_path)
