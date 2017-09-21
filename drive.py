@@ -18,6 +18,8 @@ from keras import __version__ as keras_version
 
 import matplotlib.pyplot as plt
 from preprocessing import image_process
+import preprocessing as pp
+import cv2
 
 sio = socketio.Server()
 app = Flask(__name__)
@@ -67,13 +69,18 @@ def telemetry(sid, data):
         # The current image from the center camera of the car
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
-        image = image_process(image)
-        print("image", str(image.shape))
-        plt.imshow(image)
-        plt.savefig('results/videos/' + str(counter) + '.png')
+        # image = image_process(image)
+        # print("image", str(image.shape))
+        # plt.imshow(image)
+        # plt.savefig('results/videos/' + str(counter) + '.png')
         counter += 1
         image_array = np.asarray(image)
-        steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
+        # cv2.imwrite('./results/videos/orig-' + str(counter) + '.png',image_array)
+        # converted_image = pp.AutoCannyGaussianBlurSobelYRGB(image_array)
+        # converted_image = pp.SobelYRGB(image_array)
+        converted_image = pp.CropSky(image_array)
+        # cv2.imwrite('./results/videos/pp-' + str(counter) + '.png',converted_image)
+        steering_angle = float(model.predict(converted_image[None, :, :, :], batch_size=1))
 
         throttle = controller.update(float(speed))
 

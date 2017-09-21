@@ -7,11 +7,14 @@ import augmentation
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import gc; gc.collect()
+import preprocessing as pp
+from sklearn.utils import shuffle
 
 
 # base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
-base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/data/'
+# base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/data/'
 base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data/'
+base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data_orig/'
 
 parser = argparse.ArgumentParser(description='Remote Driving')
 parser.add_argument(
@@ -20,24 +23,9 @@ parser.add_argument(
     help='Path to training data, this dir should have /IMG and driving_log.csv'
 )
 
-EPOCHS = 1
+EPOCHS = 4
 
 import augmentation
-
-def image_process(current_path):
-    image = mpimg.imread(current_path)
-
-    cropped = cv2.resize(image[60:140,:], (320, 80))
-    
-    R = cropped[:,:,0]
-    G = cropped[:,:,1]
-    B = cropped[:,:,2]
-    thresh = (200, 255)
-    rbinary = np.zeros_like(R)
-    gbinary = np.zeros_like(G)
-    rbinary[(R > thresh[0]) & (R <= thresh[1])] = 1
-    
-    return np.dstack((rbinary, gbinary, gbinary))
 
 def generator(samples, batch_size=32):
     num_samples = len(samples)
@@ -51,7 +39,7 @@ def generator(samples, batch_size=32):
             for batch_sample in batch_samples:
                 name = base_path+ 'IMG/'+batch_sample[0].split('/')[-1]
                 center_angle = float(batch_sample[3])
-                images.append(image_process(name))
+                images.append(pp.AutoCannyGaussianBlurSobelYRGB(name))
                 angles.append(center_angle)
                 
             # Data Augmentation
@@ -72,22 +60,36 @@ with open(training_data_base_path + 'driving_log.csv') as csvfile:
     for line in reader:
         lines.append(line)
 
-counter = 0
+# counter = len(lines)
+counter = 100
+restricted = False
 
 images = []
 measurements = []
 
-for line in lines:
+import progressbar
+
+# https://stackoverflow.com/questions/3160699/python-progress-bar
+# https://pypi.python.org/pypi/progressbar2
+bar = progressbar.ProgressBar()
+for line in bar(lines):
+    if counter == 0:
+        break
+    if restricted == True:
+        counter -= 1
     source_path = line[0]
     filename = source_path.split('/')[-1]
     current_path = base_path + 'IMG/' + filename
     # current_path = base_path + filename
     image = cv2.imread(current_path)
-    image = image_process(current_path)
+    image = np.asarray(image)
+    # image = pp.AutoCannyGaussianBlurSobelYRGB(image)
+    # image = pp.SobelYRGB(image)
+    image = pp.CropSky(image)
 
 
-    plt.imshow(image)
-    plt.savefig('results/videos/' + filename + '.png')
+    # plt.imshow(image)
+    # plt.savefig('results/videos/' + filename + '.png')
     images.append(image)
     measurement = float(line[3])
     measurements.append(measurement)
@@ -102,36 +104,55 @@ agl_images, agl_measurements = augmentation.invert_images_and_measurements(agl_i
 X_train = np.array(str_images + agl_images)
 y_train = np.array(str_measurements + agl_measurements)
 
+X_train, y_train = shuffle(X_train, y_train)
+
 print("straight images count: ", len(str_images), "measurements count: ", len(str_measurements), len(X_train))
 print("angle images count: ", len(agl_images), "measurements count: ", len(agl_measurements), len(y_train))
 
 from keras.models import Sequential
 from keras.layers import Flatten, Dense, Lambda, Dropout
+from keras.layers.advanced_activations import ELU
 from keras.layers.convolutional import Conv2D, Cropping2D
 from keras.layers.pooling import MaxPooling2D
 # from keras.layers.advanced_activations import ELU
 
+# model = Sequential()
+# # normaliastion of training data.
+# # https://keras.io/layers/convolutional/#cropping2d
+# # model.add(Cropping2D(cropping=((64, 23),(0, 0)), input_shape=(80, 320, 3)))
+# # model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
+# model.add(Conv2D(6,5,5, activation="relu"))
+# model.add(MaxPooling2D())
+# model.add(Conv2D(6,5,5, activation="relu"))
+# model.add(MaxPooling2D())
+# model.add(Conv2D(4,3,3, activation="relu"))
+# model.add(MaxPooling2D())
+# model.add(Flatten())
+# model.add(Dense(127))
+# model.add(Dropout(0.5))
+# model.add(Dense(84))
+# model.add(ELU())
+# model.add(Dense(24))
+# model.add(ELU())
+# model.add(Dropout(0.5))
+# model.add(Dense(1))
+
+
+
 model = Sequential()
 # normaliastion of training data.
 # https://keras.io/layers/convolutional/#cropping2d
-model.add(Cropping2D(cropping=((64, 23),(0, 0)), input_shape=(160, 320, 3)))
-# model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
-model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(100, 180, 3)))
-# model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(80, 320, 3)))
+# model.add(Cropping2D(cropping=((64, 23),(0, 0)), input_shape=(160, 320, 3)))
+model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(80, 320, 3)))
 model.add(Conv2D(6,5,5, activation="relu"))
 model.add(MaxPooling2D())
 model.add(Conv2D(6,5,5, activation="relu"))
-model.add(MaxPooling2D())
-model.add(Conv2D(4,3,3, activation="relu"))
 model.add(MaxPooling2D())
 model.add(Flatten())
 model.add(Dense(127))
-# model.add(Dropout(0.5))
+model.add(Dropout(0.5))
 model.add(Dense(84))
-# model.add(ELU)
-model.add(Dense(24))
-# model.add(ELU)
-# model.add(Dropout(0.5))
+model.add(Dropout(0.5))
 model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')

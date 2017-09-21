@@ -2,9 +2,70 @@ from PIL import Image
 # from cv2 import getPerspectiveTransform, warpPerspective
 import cv2
 import numpy as np
+import time
 
-def hello():
-    print('hello')
+def AutoCannyGaussianBlurSobelYRGB(image):
+    # cv2.imwrite('./results/videos/acgbsr-' + str(time.time()) + '.png',image)
+    # print(str(image.shape()))
+    rgb_image = cv2.resize(image[60:140,:], (320, 80))
+    ksize = 15
+    sobely = abs_sobel_thresh(rgb_image, orient='y', sobel_kernel=ksize, thresh_min=100, thresh_max=200)
+    blurring_ksize = 3
+    gaussianBlur = cv2.GaussianBlur(sobely, (blurring_ksize, blurring_ksize), 0)
+    auto = auto_canny(gaussianBlur)
+
+    # https://stackoverflow.com/questions/7372316/how-to-make-a-2d-numpy-array-a-3d-array
+    # https://docs.scipy.org/doc/numpy/reference/generated/numpy.concatenate.html
+    auto = np.reshape(auto, auto.shape + (1,))
+    color_image = np.concatenate((auto, auto, auto), axis = 2)
+    return color_image
+
+def CropSky(image):
+    return cv2.resize(image[60:140,:], (320, 80))
+
+def SobelYRGB(image):
+    # cv2.imwrite('./results/videos/acgbsr-' + str(time.time()) + '.png',image)
+    # print(str(image.shape()))
+    rgb_image = cv2.resize(image[60:140,:], (320, 80))
+    ksize = 15
+    sobely = abs_sobel_thresh(rgb_image, orient='y', sobel_kernel=ksize, thresh_min=100, thresh_max=200)
+    # blurring_ksize = 3
+    # gaussianBlur = cv2.GaussianBlur(sobely, (blurring_ksize, blurring_ksize), 0)
+    # auto = auto_canny(gaussianBlur)
+
+    # https://stackoverflow.com/questions/7372316/how-to-make-a-2d-numpy-array-a-3d-array
+    # https://docs.scipy.org/doc/numpy/reference/generated/numpy.concatenate.html
+    auto = np.reshape(sobely, sobely.shape + (1,))
+    color_image = np.concatenate((auto, auto, auto), axis = 2)
+    return sobely
+
+def auto_canny(image, sigma=0.33):
+    # compute the median of the single channel pixel intensities
+    v = np.median(image)
+ 
+    # apply automatic Canny edge detection using the computed median
+    lower = int(max(0, (1.0 - sigma) * v))
+    upper = int(min(255, (1.0 + sigma) * v))
+    edged = cv2.Canny(image, lower, upper)
+ 
+    # return the edged image
+    return edged
+
+
+def image_process(current_path):
+    image = mpimg.imread(current_path)
+
+    cropped = cv2.resize(image[60:140,:], (320, 80))
+    
+    R = cropped[:,:,0]
+    G = cropped[:,:,1]
+    B = cropped[:,:,2]
+    thresh = (200, 255)
+    rbinary = np.zeros_like(R)
+    gbinary = np.zeros_like(G)
+    rbinary[(R > thresh[0]) & (R <= thresh[1])] = 1
+    
+    return np.dstack((rbinary, gbinary, gbinary))
 
 # crop the image using the margin format that keras.cropping2D uses.
 # makes it simpler to port the cropping configurations.

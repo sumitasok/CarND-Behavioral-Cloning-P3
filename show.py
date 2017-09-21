@@ -5,6 +5,7 @@ import matplotlib.image as mpimg
 import numpy as np
 import preprocessing as pp
 import math
+import glob
 
 base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data/'
 
@@ -28,7 +29,7 @@ subject_images = [
 
 lines = []
 with open(base_path + 'driving_log.csv') as csvfile:
-    reader = csv.reader(csvfile)
+    reader = csv.readder(csvfile)
     for line in reader:
         lines.append(line)
 
@@ -120,7 +121,7 @@ def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
     """
     lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
     line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-    print("Lines ", line_img.shape, lines)
+    # print("Lines ", line_img.shape, lines)
     draw_lines(line_img, lines)
     return line_img
 
@@ -163,7 +164,7 @@ def process_image(image):
     gray = grayscale(gray_image)
 
     kernel_size = 7
-    print(str(type(gray)))
+    # print(str(type(gray)))
     blur_gray = gaussian_blur(gray, kernel_size)
     # image_output = gaussian_blur(image_output, 5)
 
@@ -178,8 +179,8 @@ def process_image(image):
 
     # cv2.imwrite("./test_edges.jpg", edges)
 
-    print(str(type(blur_gray)))
-    print(str(type(low_threshold)))
+    # print(str(type(blur_gray)))
+    # print(str(type(low_threshold)))
 
     edges = cv2.Canny(blur_gray, low_threshold, high_threshold)
 
@@ -201,7 +202,7 @@ def process_image(image):
     lines = cv2.HoughLinesP(edges, rho, theta, threshold, np.array([]),
                                 min_line_length, max_line_gap)
 
-    print("Hough Lines", lines)
+    # print("Hough Lines", lines)
 
     line_image = hough_lines(edges, rho, theta, threshold, min_line_length, max_line_gap)
     # Draw the lines on the edge image
@@ -210,85 +211,115 @@ def process_image(image):
 
     return lines_edges
 
-f, ax = plt.subplots(4, 2, figsize=(40, 20))
-
-for line in lines:
-    source_path = line[0]
-    filename = source_path.split('/')[-1]
-    if filename not in subject_images:
-        continue
-    current_path = base_path + 'IMG/' + filename
-
-    # image = cv2.imread(current_path)
-    image = mpimg.imread(current_path)
-    # image = image_process(current_path)
-
-    # crop the image
-    rgb_image = cv2.resize(image[60:140,:], (320, 80))
-
-    gray_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2GRAY)
-
-    bgr_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+def auto_canny(image, sigma=0.33):
+    # compute the median of the single channel pixel intensities
+    v = np.median(image)
+ 
+    # apply automatic Canny edge detection using the computed median
+    lower = int(max(0, (1.0 - sigma) * v))
+    upper = int(min(255, (1.0 + sigma) * v))
+    edged = cv2.Canny(image, lower, upper)
+ 
+    # return the edged image
+    return edged
 
 
-    # get Red channel
-    R = image[:,:,0]
-    G = image[:,:,1]
-    B = image[:,:,2]
-    rthresh = (200, 255)
-    rbinary = np.zeros_like(R)
-    rbinary[(R > rthresh[0]) & (R <= rthresh[1])] = 1
-    gbinary = np.zeros_like(G)
+if __name__ == '__main__':
+    f, ax = plt.subplots(6, 2, figsize=(40, 20))
+    
+    for line in lines:
+        source_path = line[0]
+        filename = source_path.split('/')[-1]
+        if filename not in subject_images:
+            continue
+        current_path = base_path + 'IMG/' + filename
 
-    # image2 = np.dstack((rbinary, gbinary, gbinary))
+        # image = cv2.imread(current_path)
+        image = mpimg.imread(current_path)
+        # image = image_process(current_path)
 
-    hls_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2HLS)
-    H = image[:,:,0]
-    L = image[:,:,1]
-    S = image[:,:,2]
+        # crop the image
+        rgb_image = cv2.resize(image[60:140,:], (320, 80))
 
-    sthresh = (200, 255)
-    sbinary = np.zeros_like(S)
-    sbinary[(S > sthresh[0]) & (S <= sthresh[1])] = 1
+        gray_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2GRAY)
 
-    ksize = 5
-    sobely = pp.abs_sobel_thresh(image, orient='y', sobel_kernel=ksize, thresh_min=100, thresh_max=200)
-
-    gaussianBlur = cv2.GaussianBlur(bgr_image, (ksize+4, ksize+4), 0)
-
-    cannyThresh = (45, 135)
-    canny = cv2.Canny(cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY), cannyThresh[0], cannyThresh[1])
+        bgr_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
 
 
-    # write to file
+        # get Red channel
+        R = image[:,:,0]
+        G = image[:,:,1]
+        B = image[:,:,2]
+        rthresh = (200, 255)
+        rbinary = np.zeros_like(R)
+        rbinary[(R > rthresh[0]) & (R <= rthresh[1])] = 1
+        gbinary = np.zeros_like(G)
 
-    fontsize=20
+        # image2 = np.dstack((rbinary, gbinary, gbinary))
 
-    ax[0, 0].imshow(image)
-    ax[0, 0].set_title("original RGB", fontsize=fontsize)
-    ax[0, 1].imshow(rbinary)
-    ax[0, 1].set_title("Red channel", fontsize=fontsize)
-    ax[1, 0].imshow(sbinary)
-    ax[1, 0].set_title("Saturation Channel", fontsize=fontsize)
-    ax[1, 1].imshow(sobely)
-    ax[1, 1].set_title("Sobel Y", fontsize=fontsize)
-    ax[2, 0].imshow(gray_image)
-    ax[2, 0].set_title("Gray Image", fontsize=fontsize)
-    ax[2, 1].imshow(gaussianBlur)
-    ax[2, 1].set_title("Gaussian Blur", fontsize=fontsize)
-    ax[3, 0].imshow(canny)
-    ax[3, 0].set_title("Canny threshold "+str(cannyThresh[0])+" "+str(cannyThresh[1]), fontsize=fontsize)
-    ax[3, 1].imshow(process_image(bgr_image))
+        hls_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2HLS)
+        H = image[:,:,0]
+        L = image[:,:,1]
+        S = image[:,:,2]
 
-    f.savefig('results/videos/'+filename+'.png')
-    # plt.close(f)
+        sthresh = (200, 255)
+        sbinary = np.zeros_like(S)
+        sbinary[(S > sthresh[0]) & (S <= sthresh[1])] = 1
 
+        ksize = 15
+        sobely = pp.abs_sobel_thresh(rgb_image, orient='y', sobel_kernel=ksize, thresh_min=100, thresh_max=200)
 
+        # gaussianBlur = cv2.GaussianBlur(bgr_image, (ksize+4, ksize+4), 0)
+        blurring_ksize = 3
+        gaussianBlur = cv2.GaussianBlur(sobely, (blurring_ksize, blurring_ksize), 0)
+
+        cannyThresh = (45, 135)
+        canny = cv2.Canny(cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY), cannyThresh[0], cannyThresh[1])
 
 
+        wide = cv2.Canny(gaussianBlur, 10, 200)
+        tight = cv2.Canny(gaussianBlur, 200, 250)
+        auto = auto_canny(gaussianBlur)
 
-    # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    # cv2.imshow('img', image)
-    # cv2.waitKey(500)
+        stacked = np.dstack((wide, tight, auto))
 
-cv2.destroyAllWindows()
+        # write to file
+
+        fontsize=20
+
+        ax[0, 0].imshow(image)
+        ax[0, 0].set_title("original RGB", fontsize=fontsize)
+        ax[0, 1].imshow(rbinary)
+        ax[0, 1].set_title("Red channel", fontsize=fontsize)
+        ax[1, 0].imshow(sbinary)
+        ax[1, 0].set_title("Saturation Channel", fontsize=fontsize)
+        ax[1, 1].imshow(sobely)
+        ax[1, 1].set_title("Sobel Y", fontsize=fontsize)
+        ax[2, 0].imshow(gray_image)
+        ax[2, 0].set_title("Gray Image", fontsize=fontsize)
+        ax[2, 1].imshow(gaussianBlur)
+        ax[2, 1].set_title("Gaussian Blur", fontsize=fontsize)
+        ax[3, 0].imshow(canny)
+        ax[3, 0].set_title("Canny threshold "+str(cannyThresh[0])+" "+str(cannyThresh[1]), fontsize=fontsize)
+        ax[3, 1].imshow(process_image(bgr_image))
+        ax[4, 0].imshow(auto_canny(gaussianBlur))
+        ax[4, 0].set_title('auto canny', fontsize=fontsize)
+        ax[4, 1].imshow(wide)
+        ax[4, 1].set_title('wide', fontsize=fontsize)
+        ax[5, 0].imshow(tight)
+        ax[5, 0].set_title('tight', fontsize=fontsize)
+        ax[5, 1].imshow(stacked)
+        ax[5, 1].set_title('stacked', fontsize=fontsize)
+
+        f.savefig('results/videos/'+filename+'.png')
+        # plt.close(f)
+
+
+
+
+
+        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # cv2.imshow('img', image)
+        # cv2.waitKey(500)
+
+    cv2.destroyAllWindows()

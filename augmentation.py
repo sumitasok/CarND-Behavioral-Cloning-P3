@@ -27,7 +27,7 @@ def split_straight_angle(images, measurements):
 	angle_measurements = []
 
 	for image, measurement in zip(images, measurements):
-		if (measurement > 0.34 or measurement < -0.34):
+		if (measurement > 0.15 or measurement < -0.15):
 			angle_drive.append(image)
 			angle_measurements.append(measurement)
 		else:

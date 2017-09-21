@@ -5,3 +5,7 @@ run/
 results/
 .ipynb_checkpoints/
 .DS_Store
+input/
+input
+output
+output/
