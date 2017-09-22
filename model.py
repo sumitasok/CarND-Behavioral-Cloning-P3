@@ -72,8 +72,9 @@ import progressbar
 
 # https://stackoverflow.com/questions/3160699/python-progress-bar
 # https://pypi.python.org/pypi/progressbar2
-bar = progressbar.ProgressBar()
-for line in bar(lines):
+# bar = progressbar.ProgressBar()
+from tqdm import tqdm
+for line in tqdm(lines):
     if counter == 0:
         break
     if restricted == True:
