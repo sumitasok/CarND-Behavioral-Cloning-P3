@@ -68,7 +68,7 @@ restricted = False
 images = []
 measurements = []
 
-import progressbar
+# import progressbar
 
 # https://stackoverflow.com/questions/3160699/python-progress-bar
 # https://pypi.python.org/pypi/progressbar2
