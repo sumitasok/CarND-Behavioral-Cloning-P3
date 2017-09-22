@@ -6,16 +6,18 @@ import time
 import augmentation
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
-import gc; gc.collect()
 import preprocessing as pp
 from sklearn.utils import shuffle
 
+import gc; gc.collect()
 
 # base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
 # base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/data/'
 base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data/'
 base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data_orig/'
 base_path = '/input/data_orig/'
+base_path = '/input/data/'
+# base_path = '/input/'
 
 parser = argparse.ArgumentParser(description='Remote Driving')
 parser.add_argument(
@@ -56,10 +58,11 @@ def generator(samples, batch_size=32):
 
 lines = []
 training_data_base_path = base_path
-with open(training_data_base_path + 'driving_log.csv') as csvfile:
-    reader = csv.reader(csvfile)
-    for line in reader:
-        lines.append(line)
+for i in list(range(7))
+    with open(training_data_base_path + 'driving_log.csv') as csvfile:
+        reader = csv.reader(csvfile)
+        for line in reader:
+            lines.append(line)
 
 # counter = len(lines)
 counter = 100
@@ -116,6 +119,7 @@ from keras.layers import Flatten, Dense, Lambda, Dropout
 from keras.layers.advanced_activations import ELU
 from keras.layers.convolutional import Conv2D, Cropping2D
 from keras.layers.pooling import MaxPooling2D
+from keras.optimizers import SGD, Adam, RMSprop
 # from keras.layers.advanced_activations import ELU
 
 # model = Sequential()
@@ -146,18 +150,22 @@ model = Sequential()
 # https://keras.io/layers/convolutional/#cropping2d
 # model.add(Cropping2D(cropping=((64, 23),(0, 0)), input_shape=(160, 320, 3)))
 model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(80, 320, 3)))
-model.add(Conv2D(6,5,5, activation="relu"))
+model.add(Conv2D(16,8,8, activation="relu"))
 model.add(MaxPooling2D())
-model.add(Conv2D(6,5,5, activation="relu"))
+model.add(Conv2D(32,5,5, activation="relu"))
+model.add(MaxPooling2D())
+model.add(Conv2D(64,5,5, activation="relu"))
 model.add(MaxPooling2D())
 model.add(Flatten())
 model.add(Dense(127))
 model.add(Dropout(0.5))
+model.add(ELU())
 model.add(Dense(84))
 model.add(Dropout(0.5))
+model.add(ELU())
 model.add(Dense(1))
-
-model.compile(loss='mse', optimizer='adam')
+adam = Adam(lr=0.0001)
+model.compile(loss='mse', optimizer=adam)
 model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=EPOCHS)
 
 timestamp = str(time.time()*1000000)
