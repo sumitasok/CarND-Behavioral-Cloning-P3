@@ -15,7 +15,7 @@ from sklearn.utils import shuffle
 # base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/data/'
 base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data/'
 base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data_orig/'
-base_path = 'input/data_orig/'
+base_path = '/input/data_orig/'
 
 parser = argparse.ArgumentParser(description='Remote Driving')
 parser.add_argument(
@@ -163,9 +163,9 @@ timestamp = str(time.time()*1000000)
 print("file identifier: ", timestamp)
 # https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model
 model_json = model.to_json()
-with open("output/model-"+ timestamp +".json", "w") as json_file:
+with open("/output/model-"+ timestamp +".json", "w") as json_file:
   json_file.write(model_json)
-model.save('output/model-'+ timestamp +'.h5')
+model.save('/output/model-'+ timestamp +'.h5')
 model.summary()
 # from keras.utils import plot_model
 # plot_model(model, to_file='results/model-'+timestamp+'.png')
