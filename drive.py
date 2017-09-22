@@ -53,12 +53,9 @@ set_speed = 9
 controller.set_desired(set_speed)
 
 
-counter = 0
 
 @sio.on('telemetry')
 def telemetry(sid, data):
-    global counter
-
     if data:
         # The current steering angle of the car
         steering_angle = data["steering_angle"]
@@ -69,17 +66,10 @@ def telemetry(sid, data):
         # The current image from the center camera of the car
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
-        # image = image_process(image)
-        # print("image", str(image.shape))
-        # plt.imshow(image)
-        # plt.savefig('results/videos/' + str(counter) + '.png')
-        counter += 1
+
         image_array = np.asarray(image)
-        # cv2.imwrite('./results/videos/orig-' + str(counter) + '.png',image_array)
-        # converted_image = pp.AutoCannyGaussianBlurSobelYRGB(image_array)
-        # converted_image = pp.SobelYRGB(image_array)
+        # Crop out the Skyp area from the Images, as that will not add value to the learning, and lesser data in memory.
         converted_image = pp.CropSky(image_array)
-        # cv2.imwrite('./results/videos/pp-' + str(counter) + '.png',converted_image)
         steering_angle = float(model.predict(converted_image[None, :, :, :], batch_size=1))
 
         throttle = controller.update(float(speed))

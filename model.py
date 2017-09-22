@@ -11,13 +11,7 @@ from sklearn.utils import shuffle
 
 import gc; gc.collect()
 
-# base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/Training Data/'
-# base_path =  '/Users/sumitasok/Documents/Self-Driving Car/Behavioural Cloning/data/'
-base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data/'
-base_path = '/Users/sumitasok/ml_data/Self-Driving-Car/Behavioural-Cloning/data_orig/'
-base_path = '/input/data_orig/'
 base_path = '/input/data/'
-# base_path = '/input/'
 
 parser = argparse.ArgumentParser(description='Remote Driving')
 parser.add_argument(
@@ -42,7 +36,9 @@ def generator(samples, batch_size=32):
             for batch_sample in batch_samples:
                 name = base_path+ 'IMG/'+batch_sample[0].split('/')[-1]
                 center_angle = float(batch_sample[3])
-                images.append(pp.AutoCannyGaussianBlurSobelYRGB(name))
+                image = cv2.imread(name)
+                image = np.asarray(image)
+                images.append(pp.CropSky(image))
                 angles.append(center_angle)
                 
             # Data Augmentation
@@ -58,24 +54,21 @@ def generator(samples, batch_size=32):
 
 lines = []
 training_data_base_path = base_path
+# In order to augment the data, the existing data was duplicated n times
 for i in list(range(7))
     with open(training_data_base_path + 'driving_log.csv') as csvfile:
         reader = csv.reader(csvfile)
         for line in reader:
             lines.append(line)
 
-# counter = len(lines)
 counter = 100
 restricted = False
 
 images = []
 measurements = []
 
-# import progressbar
-
-# https://stackoverflow.com/questions/3160699/python-progress-bar
-# https://pypi.python.org/pypi/progressbar2
-# bar = progressbar.ProgressBar()
+# Preprocessing
+# crop of the sky and area irrelevant for training.
 from tqdm import tqdm
 for line in tqdm(lines):
     if counter == 0:
@@ -85,21 +78,17 @@ for line in tqdm(lines):
     source_path = line[0]
     filename = source_path.split('/')[-1]
     current_path = base_path + 'IMG/' + filename
-    # current_path = base_path + filename
     image = cv2.imread(current_path)
     image = np.asarray(image)
-    # image = pp.AutoCannyGaussianBlurSobelYRGB(image)
-    # image = pp.SobelYRGB(image)
+    # Crop out the Skyp area from the Images, as that will not add value to the learning, and lesser data in memory.
     image = pp.CropSky(image)
 
-
-    # plt.imshow(image)
-    # plt.savefig('results/videos/' + filename + '.png')
     images.append(image)
     measurement = float(line[3])
     measurements.append(measurement)
 
 # Data Augmentation
+# double the trun data by flipping the images and steering angles when driving ange is above a particular value.
 str_imgs, str_msr, agl_imgs, agl_msr = augmentation.split_straight_angle(images, measurements)
 str_images, str_measurements = str_imgs, str_msr # augmentation.remove_excess_straigth_drive(str_imgs, str_msr, len(agl_imgs)/len(str_imgs))
 agl_images, agl_measurements = augmentation.invert_images_and_measurements(agl_imgs, agl_msr)
@@ -119,36 +108,9 @@ from keras.layers import Flatten, Dense, Lambda, Dropout
 from keras.layers.advanced_activations import ELU
 from keras.layers.convolutional import Conv2D, Cropping2D
 from keras.layers.pooling import MaxPooling2D
-from keras.optimizers import SGD, Adam, RMSprop
-# from keras.layers.advanced_activations import ELU
-
-# model = Sequential()
-# # normaliastion of training data.
-# # https://keras.io/layers/convolutional/#cropping2d
-# # model.add(Cropping2D(cropping=((64, 23),(0, 0)), input_shape=(80, 320, 3)))
-# # model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(160, 320, 3)))
-# model.add(Conv2D(6,5,5, activation="relu"))
-# model.add(MaxPooling2D())
-# model.add(Conv2D(6,5,5, activation="relu"))
-# model.add(MaxPooling2D())
-# model.add(Conv2D(4,3,3, activation="relu"))
-# model.add(MaxPooling2D())
-# model.add(Flatten())
-# model.add(Dense(127))
-# model.add(Dropout(0.5))
-# model.add(Dense(84))
-# model.add(ELU())
-# model.add(Dense(24))
-# model.add(ELU())
-# model.add(Dropout(0.5))
-# model.add(Dense(1))
-
-
+from keras.optimizers import Adam
 
 model = Sequential()
-# normaliastion of training data.
-# https://keras.io/layers/convolutional/#cropping2d
-# model.add(Cropping2D(cropping=((64, 23),(0, 0)), input_shape=(160, 320, 3)))
 model.add(Lambda(lambda x: ((x/255.0)-0.5), input_shape=(80, 320, 3)))
 model.add(Conv2D(16,8,8, activation="relu"))
 model.add(MaxPooling2D())
@@ -176,5 +138,3 @@ with open("/output/model-"+ timestamp +".json", "w") as json_file:
   json_file.write(model_json)
 model.save('/output/model-'+ timestamp +'.h5')
 model.summary()
-# from keras.utils import plot_model
-# plot_model(model, to_file='results/model-'+timestamp+'.png')
